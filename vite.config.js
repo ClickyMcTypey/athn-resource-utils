@@ -6,7 +6,7 @@ export default defineConfig({
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                app: 'src/main.js'
+                athn_resourceutils: 'src/main.js'
             },
             output: {
                 entryFileNames: 'assets/[name].[hash].js',
