@@ -42,14 +42,22 @@ export function createResourceController(userConfig = {}) {
     }
 
     function attachListeners() {
-        qsAll(config.selectors.form, root).forEach((form) => {
-            form.addEventListener('change', scheduleSync);
-            form.addEventListener('input', scheduleSync);
-        });
+        root.addEventListener('change', scheduleSync, true);
+        root.addEventListener('input', scheduleSync, true);
 
-        qsAll(config.selectors.filter, root).forEach((filter) => {
-            filter.addEventListener('change', scheduleSync);
-        });
+        root.addEventListener(
+            'click',
+            (event) => {
+                const clickedInteractiveElement = event.target.closest(
+                    config.selectors.interactive
+                );
+
+                if (!clickedInteractiveElement) return;
+
+                scheduleSync();
+            },
+            true
+        );
     }
 
     function attachObserver() {

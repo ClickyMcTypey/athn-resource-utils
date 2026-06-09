@@ -1,6 +1,6 @@
 export const DEFAULT_CONFIG = {
     debug: false,
-    updateDelay: 100,
+    updateDelay: 150,
 
     selectors: {
         form: '[athn_form]',
@@ -8,17 +8,22 @@ export const DEFAULT_CONFIG = {
         item: '[data-type]',
         countLabel: '[count]',
         section: '[athn-resource-section][content-type], [content-type]',
-        empty: '.resource-empty'
+        empty: '.resource-empty',
+
+        // Generic click targets.
+        // This lets the utility react to topic filters, search, buttons, etc.
+        interactive:
+            'input, select, textarea, button, a, label, [role="button"], [tabindex]'
     },
 
     behavior: {
         showEmptyState: true,
 
-        // Set this to true later if you want whole sections hidden
-        // when their count becomes 0.
-        hideSectionWhenEmpty: false,
+        // Main behavior you want:
+        // hide content-type sections when their visible item count is 0.
+        hideSectionWhenEmpty: true,
 
-        // Useful when Webflow/Finsweet/other filters hide/show CMS items.
+        // Watches for any external script hiding/showing items.
         observeDomChanges: true
     }
 };

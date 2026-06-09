@@ -1,4 +1,4 @@
-import { qsAll, getAttr, setDisplay, isItemAvailable } from '../utils/dom.js';
+import { qsAll, getAttr, setDisplay, isSelfHidden } from '../utils/dom.js';
 
 export function getActiveContentTypes(root, config) {
     const activeTypes = new Set();
@@ -20,7 +20,7 @@ export function getResourceCounts(root, config) {
     const counts = {};
 
     qsAll(config.selectors.item, root).forEach((item) => {
-        if (!isItemAvailable(item)) return;
+        if (isSelfHidden(item)) return;
 
         const type = getAttr(item, 'data-type');
 
@@ -49,22 +49,25 @@ export function updateSections(root, config, counts, activeContentTypes) {
         if (!type) return;
 
         const count = counts[type] || 0;
-        const emptyEl = section.querySelector(config.selectors.empty);
-        const typeIsActive = activeContentTypes.size === 0 || activeContentTypes.has(type);
+        const hasVisibleItems = count > 0;
 
-        section.setAttribute('data-athn-empty', count === 0 ? 'true' : 'false');
+        const contentTypeAllowed =
+            activeContentTypes.size === 0 || activeContentTypes.has(type);
+
+        const emptyEl = section.querySelector(config.selectors.empty);
+
         section.setAttribute('data-athn-count', String(count));
+        section.setAttribute('data-athn-empty', hasVisibleItems ? 'false' : 'true');
 
         if (emptyEl && config.behavior.showEmptyState) {
-            setDisplay(emptyEl, count === 0);
+            setDisplay(emptyEl, !hasVisibleItems);
         }
 
         const shouldShowSection =
-            typeIsActive &&
+            contentTypeAllowed &&
             (
                 !config.behavior.hideSectionWhenEmpty ||
-                count > 0 ||
-                Boolean(emptyEl && config.behavior.showEmptyState)
+                hasVisibleItems
             );
 
         setDisplay(section, shouldShowSection);

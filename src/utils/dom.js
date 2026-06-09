@@ -17,15 +17,19 @@ export function setDisplay(el, shouldShow, displayValue = '') {
 }
 
 /**
- * This intentionally checks the item itself, not the parent section.
- * That prevents our own section hiding from making counts become 0.
+ * Checks only the item itself.
+ *
+ * Important:
+ * Do not check parent visibility here.
+ * If we check parent visibility, then hiding the whole [content-type]
+ * section would make all children look hidden forever.
  */
-export function isItemAvailable(item) {
-    if (!item || !item.isConnected) return false;
-    if (item.hidden) return false;
-    if (item.getAttribute('aria-hidden') === 'true') return false;
+export function isSelfHidden(el) {
+    if (!el || !el.isConnected) return true;
+    if (el.hidden) return true;
+    if (el.getAttribute('aria-hidden') === 'true') return true;
 
-    const style = window.getComputedStyle(item);
+    const style = window.getComputedStyle(el);
 
-    return style.display !== 'none' && style.visibility !== 'hidden';
+    return style.display === 'none' || style.visibility === 'hidden';
 }
