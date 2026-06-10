@@ -4,26 +4,24 @@ export const DEFAULT_CONFIG = {
 
     selectors: {
         form: '[athn_form]',
-        filter: '[athn_filter]',
         item: '[data-type]',
         countLabel: '[count]',
         section: '[athn-resource-section][content-type], [content-type]',
         empty: '.resource-empty',
 
-        // Generic click targets.
-        // This lets the utility react to topic filters, search, buttons, etc.
-        interactive:
-            'input, select, textarea, button, a, label, [role="button"], [tabindex]'
+        // New anchor controls.
+        anchor: '[athn_anchor]',
+
+        // Optional legacy support if your old buttons still use athn_filter.
+        legacyAnchor: '[athn_filter]'
     },
 
     behavior: {
         showEmptyState: true,
+        observeDomChanges: true,
 
-        // Main behavior you want:
-        // hide content-type sections when their visible item count is 0.
-        hideSectionWhenEmpty: true,
-
-        // Watches for any external script hiding/showing items.
-        observeDomChanges: true
+        scrollOffset: 100,
+        smoothScroll: true,
+        updateHash: false
     }
 };

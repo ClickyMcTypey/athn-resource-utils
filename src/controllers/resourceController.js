@@ -2,11 +2,15 @@ import { DEFAULT_CONFIG } from '../config/defaults.js';
 import { mergeConfig } from '../utils/mergeConfig.js';
 import { qsAll } from '../utils/dom.js';
 import {
-    getActiveContentTypes,
     getResourceCounts,
     updateCountLabels,
-    updateSections
+    updateEmptyStates
 } from '../services/resourceCounts.js';
+import {
+    getAnchorTarget,
+    scrollToAnchorTarget,
+    updateUrlHash
+} from '../services/anchorScroll.js';
 
 export function createResourceController(userConfig = {}) {
     const config = mergeConfig(DEFAULT_CONFIG, userConfig);
@@ -21,16 +25,12 @@ export function createResourceController(userConfig = {}) {
     }
 
     function sync() {
-        const activeContentTypes = getActiveContentTypes(root, config);
         const counts = getResourceCounts(root, config);
 
         updateCountLabels(root, config, counts);
-        updateSections(root, config, counts, activeContentTypes);
+        updateEmptyStates(root, config, counts);
 
-        log('sync complete', {
-            activeContentTypes: Array.from(activeContentTypes),
-            counts
-        });
+        log('sync complete', { counts });
     }
 
     function scheduleSync() {
@@ -41,23 +41,28 @@ export function createResourceController(userConfig = {}) {
         }, config.updateDelay);
     }
 
+    function handleAnchorClick(event) {
+        const anchor = event.target.closest(
+            `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`
+        );
+
+        if (!anchor) return;
+
+        const target = getAnchorTarget(anchor, root, config);
+
+        if (!target) return;
+
+        event.preventDefault();
+
+        scrollToAnchorTarget(target, config);
+        updateUrlHash(target, anchor, config);
+    }
+
     function attachListeners() {
+        root.addEventListener('click', handleAnchorClick, true);
+
         root.addEventListener('change', scheduleSync, true);
         root.addEventListener('input', scheduleSync, true);
-
-        root.addEventListener(
-            'click',
-            (event) => {
-                const clickedInteractiveElement = event.target.closest(
-                    config.selectors.interactive
-                );
-
-                if (!clickedInteractiveElement) return;
-
-                scheduleSync();
-            },
-            true
-        );
     }
 
     function attachObserver() {
@@ -105,6 +110,10 @@ export function createResourceController(userConfig = {}) {
         destroy,
         sync,
         scheduleSync,
+        scrollTo: (type) => {
+            const target = root.querySelector(`[content-type="${CSS.escape(type)}"]`);
+            scrollToAnchorTarget(target, config);
+        },
         getCounts: () => getResourceCounts(root, config)
     };
 

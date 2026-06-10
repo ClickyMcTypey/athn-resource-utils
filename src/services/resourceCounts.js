@@ -1,21 +1,5 @@
 import { qsAll, getAttr, setDisplay, isSelfHidden } from '../utils/dom.js';
 
-export function getActiveContentTypes(root, config) {
-    const activeTypes = new Set();
-
-    qsAll(config.selectors.filter, root).forEach((el) => {
-        if (!el.checked) return;
-
-        const type = getAttr(el, 'athn_filter');
-
-        if (type) {
-            activeTypes.add(type);
-        }
-    });
-
-    return activeTypes;
-}
-
 export function getResourceCounts(root, config) {
     const counts = {};
 
@@ -42,7 +26,7 @@ export function updateCountLabels(root, config, counts) {
     });
 }
 
-export function updateSections(root, config, counts, activeContentTypes) {
+export function updateEmptyStates(root, config, counts) {
     qsAll(config.selectors.section, root).forEach((section) => {
         const type = getAttr(section, 'content-type');
 
@@ -50,10 +34,6 @@ export function updateSections(root, config, counts, activeContentTypes) {
 
         const count = counts[type] || 0;
         const hasVisibleItems = count > 0;
-
-        const contentTypeAllowed =
-            activeContentTypes.size === 0 || activeContentTypes.has(type);
-
         const emptyEl = section.querySelector(config.selectors.empty);
 
         section.setAttribute('data-athn-count', String(count));
@@ -63,13 +43,8 @@ export function updateSections(root, config, counts, activeContentTypes) {
             setDisplay(emptyEl, !hasVisibleItems);
         }
 
-        const shouldShowSection =
-            contentTypeAllowed &&
-            (
-                !config.behavior.hideSectionWhenEmpty ||
-                hasVisibleItems
-            );
-
-        setDisplay(section, shouldShowSection);
+        // Important:
+        // Do not hide the section anymore.
+        section.style.display = '';
     });
 }
