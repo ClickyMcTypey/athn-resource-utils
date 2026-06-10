@@ -3,21 +3,25 @@ export const DEFAULT_CONFIG = {
     updateDelay: 150,
 
     selectors: {
-        form: '[athn_form]',
         item: '[data-type]',
         countLabel: '[count]',
         section: '[athn-resource-section][content-type], [content-type]',
         empty: '.resource-empty',
 
-        // New anchor controls.
+        // Preferred new attribute
         anchor: '[athn_anchor]',
 
-        // Optional legacy support if your old buttons still use athn_filter.
+        // Optional support if your old buttons still use athn_filter
         legacyAnchor: '[athn_filter]'
+    },
+
+    classNames: {
+        disabled: 'is-disabled'
     },
 
     behavior: {
         showEmptyState: true,
+        hideSectionWhenEmpty: true,
         observeDomChanges: true,
 
         scrollOffset: 100,

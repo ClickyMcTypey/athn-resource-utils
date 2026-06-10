@@ -1,15 +1,15 @@
 import { DEFAULT_CONFIG } from '../config/defaults.js';
 import { mergeConfig } from '../utils/mergeConfig.js';
-import { qsAll } from '../utils/dom.js';
 import {
     getResourceCounts,
     updateCountLabels,
-    updateEmptyStates
+    updateSections
 } from '../services/resourceCounts.js';
 import {
     getAnchorTarget,
     scrollToAnchorTarget,
-    updateUrlHash
+    updateUrlHash,
+    updateAnchorStates
 } from '../services/anchorScroll.js';
 
 export function createResourceController(userConfig = {}) {
@@ -28,7 +28,8 @@ export function createResourceController(userConfig = {}) {
         const counts = getResourceCounts(root, config);
 
         updateCountLabels(root, config, counts);
-        updateEmptyStates(root, config, counts);
+        updateSections(root, config, counts);
+        updateAnchorStates(root, config, counts);
 
         log('sync complete', { counts });
     }
@@ -42,20 +43,28 @@ export function createResourceController(userConfig = {}) {
     }
 
     function handleAnchorClick(event) {
-        const anchor = event.target.closest(
-            `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`
-        );
+        const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
+        const anchor = event.target.closest(selector);
 
         if (!anchor) return;
 
-        const target = getAnchorTarget(anchor, root, config);
+        // Important:
+        // Always prevent the browser's native anchor jump.
+        event.preventDefault();
+
+        const isDisabled =
+            anchor.classList.contains(config.classNames.disabled) ||
+            anchor.getAttribute('aria-disabled') === 'true' ||
+            anchor.getAttribute('data-athn-disabled') === 'true';
+
+        if (isDisabled) return;
+
+        const target = getAnchorTarget(anchor, root);
 
         if (!target) return;
 
-        event.preventDefault();
-
         scrollToAnchorTarget(target, config);
-        updateUrlHash(target, anchor, config);
+        updateUrlHash(anchor, config);
     }
 
     function attachListeners() {
@@ -110,10 +119,6 @@ export function createResourceController(userConfig = {}) {
         destroy,
         sync,
         scheduleSync,
-        scrollTo: (type) => {
-            const target = root.querySelector(`[content-type="${CSS.escape(type)}"]`);
-            scrollToAnchorTarget(target, config);
-        },
         getCounts: () => getResourceCounts(root, config)
     };
 

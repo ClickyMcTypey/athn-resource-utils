@@ -26,7 +26,7 @@ export function updateCountLabels(root, config, counts) {
     });
 }
 
-export function updateEmptyStates(root, config, counts) {
+export function updateSections(root, config, counts) {
     qsAll(config.selectors.section, root).forEach((section) => {
         const type = getAttr(section, 'content-type');
 
@@ -43,8 +43,9 @@ export function updateEmptyStates(root, config, counts) {
             setDisplay(emptyEl, !hasVisibleItems);
         }
 
-        // Important:
-        // Do not hide the section anymore.
-        section.style.display = '';
+        const shouldShowSection =
+            !config.behavior.hideSectionWhenEmpty || hasVisibleItems;
+
+        setDisplay(section, shouldShowSection);
     });
 }
