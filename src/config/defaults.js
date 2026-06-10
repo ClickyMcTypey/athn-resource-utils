@@ -7,23 +7,22 @@ export const DEFAULT_CONFIG = {
         countLabel: '[count]',
         section: '[athn-resource-section][content-type], [content-type]',
         empty: '.resource-empty',
-
-        // Preferred new attribute
         anchor: '[athn_anchor]',
-
-        // Optional support if your old buttons still use athn_filter
         legacyAnchor: '[athn_filter]'
     },
 
     classNames: {
-        disabled: 'is-disabled'
+        disabled: 'is-disabled',
+
+        // Add whatever active class your anchors use here.
+        // w--current is useful if Webflow is adding current state.
+        active: ['is-active', 'w--current']
     },
 
     behavior: {
         showEmptyState: true,
         hideSectionWhenEmpty: true,
         observeDomChanges: true,
-
         scrollOffset: 100,
         smoothScroll: true,
         updateHash: false

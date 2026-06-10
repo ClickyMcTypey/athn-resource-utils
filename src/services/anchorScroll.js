@@ -52,6 +52,10 @@ export function updateUrlHash(anchor, config) {
 export function updateAnchorStates(root, config, counts) {
     const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
 
+    const activeClassNames = Array.isArray(config.classNames.active)
+        ? config.classNames.active
+        : [config.classNames.active].filter(Boolean);
+
     qsAll(selector, root).forEach((anchor) => {
         const value = getAnchorValue(anchor);
 
@@ -65,6 +69,11 @@ export function updateAnchorStates(root, config, counts) {
         anchor.setAttribute('data-athn-disabled', isDisabled ? 'true' : 'false');
 
         if (isDisabled) {
+            activeClassNames.forEach((className) => {
+                anchor.classList.remove(className);
+            });
+
+            anchor.removeAttribute('aria-current');
             anchor.setAttribute('tabindex', '-1');
         } else {
             anchor.removeAttribute('tabindex');
