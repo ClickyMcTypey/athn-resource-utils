@@ -30,13 +30,39 @@ export function scrollToAnchorTarget(target, config) {
     if (!target) return;
 
     const offset = Number(config.behavior.scrollOffset) || 0;
-    const targetTop = target.getBoundingClientRect().top + window.scrollY;
-    const scrollTop = Math.max(targetTop - offset, 0);
+    const duration = Number(config.behavior.scrollDuration) || 700;
 
-    window.scrollTo({
-        top: scrollTop,
-        behavior: config.behavior.smoothScroll ? 'smooth' : 'auto'
-    });
+    const startY = window.scrollY;
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    const endY = Math.max(targetTop - offset, 0);
+    const distance = endY - startY;
+
+    if (!config.behavior.smoothScroll || duration <= 0) {
+        window.scrollTo(0, endY);
+        return;
+    }
+
+    const startTime = performance.now();
+
+    function easeInOutCubic(t) {
+        return t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeInOutCubic(progress);
+
+        window.scrollTo(0, startY + distance * easedProgress);
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    requestAnimationFrame(animate);
 }
 
 export function updateUrlHash(anchor, config) {

@@ -23,8 +23,11 @@ export const DEFAULT_CONFIG = {
         showEmptyState: true,
         hideSectionWhenEmpty: true,
         observeDomChanges: true,
+
         scrollOffset: 100,
         smoothScroll: true,
+        scrollDuration: 700,
         updateHash: false
     }
+
 };
