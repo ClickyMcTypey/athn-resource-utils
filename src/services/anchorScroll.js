@@ -153,13 +153,13 @@ export function clearActiveAnchorParents(root, config) {
     const activeClassNames = getActiveClassNames(config);
 
     qsAll(selector, root).forEach((anchor) => {
-        const parent = getAnchorParent(anchor);
+        const activeTargets = getAnchorActiveTargets(anchor);
 
-        if (parent) {
+        activeTargets.forEach((target) => {
             activeClassNames.forEach((className) => {
-                parent.classList.remove(className);
+                target.classList.remove(className);
             });
-        }
+        });
 
         anchor.removeAttribute('aria-current');
     });
@@ -187,15 +187,25 @@ export function setActiveAnchorByType(root, config, type, counts = {}) {
 
         if (isDisabled) return;
 
-        const parent = getAnchorParent(anchor);
+        const activeTargets = getAnchorActiveTargets(anchor);
 
-        if (!parent) return;
-
-        activeClassNames.forEach((className) => {
-            parent.classList.add(className);
+        activeTargets.forEach((target) => {
+            activeClassNames.forEach((className) => {
+                target.classList.add(className);
+            });
         });
 
         anchor.setAttribute('aria-current', 'true');
+    });
+}
+
+function getAnchorActiveTargets(anchor) {
+    const parent = anchor.parentElement;
+
+    if (!parent) return [];
+
+    return Array.from(parent.children).filter((sibling) => {
+        return sibling !== anchor && sibling.matches('.w-form-label');
     });
 }
 
