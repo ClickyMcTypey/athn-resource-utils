@@ -23,9 +23,10 @@ export const DEFAULT_CONFIG = {
 
         scrollOffset: 100,
         smoothScroll: true,
-        scrollDuration: 900,
+        scrollDuration: 800,
         updateHash: false,
 
-        scrollSpy: true
+        scrollSpy: true,
+        scrollSpyBuffer: 8
     }
 };

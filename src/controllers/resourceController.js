@@ -42,6 +42,7 @@ export function createResourceController(userConfig = {}) {
         log('sync complete', { counts });
     }
 
+
     function scheduleScrollSpy() {
         if (!config.behavior.scrollSpy) return;
         if (scrollSpyFrame) return;

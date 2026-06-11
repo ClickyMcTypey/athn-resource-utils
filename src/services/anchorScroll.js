@@ -252,12 +252,16 @@ export function updateActiveAnchorFromScroll(root, config, counts = {}) {
 
     const sections = qsAll(config.selectors.section, root);
 
-    let bestSection = null;
-    let bestOverlap = 0;
-
     const offset = Number(config.behavior.scrollOffset) || 0;
-    const viewportTop = window.scrollY + offset;
-    const viewportBottom = window.scrollY + window.innerHeight;
+    const spyBuffer = Number(config.behavior.scrollSpyBuffer) || 8;
+
+    // This is the detection line.
+    // If your navbar offset is 100px, we check slightly below that.
+    const scrollLine = window.scrollY + offset + spyBuffer;
+
+    let activeSection = null;
+    let previousVisibleSection = null;
+    let nextVisibleSection = null;
 
     sections.forEach((section) => {
         if (isSelfHidden(section)) return;
@@ -274,16 +278,27 @@ export function updateActiveAnchorFromScroll(root, config, counts = {}) {
         const sectionTop = rect.top + window.scrollY;
         const sectionBottom = sectionTop + rect.height;
 
-        const overlap = Math.max(
-            0,
-            Math.min(sectionBottom, viewportBottom) - Math.max(sectionTop, viewportTop)
-        );
+        if (rect.height <= 0) return;
 
-        if (overlap > bestOverlap) {
-            bestOverlap = overlap;
-            bestSection = section;
+        const lineIsInsideSection =
+            sectionTop <= scrollLine && sectionBottom > scrollLine;
+
+        if (lineIsInsideSection) {
+            activeSection = section;
+            return;
+        }
+
+        if (sectionTop <= scrollLine) {
+            previousVisibleSection = section;
+            return;
+        }
+
+        if (!nextVisibleSection) {
+            nextVisibleSection = section;
         }
     });
+
+    const bestSection = activeSection || previousVisibleSection || nextVisibleSection;
 
     if (!bestSection) {
         clearActiveAnchorLabels(root, config);
