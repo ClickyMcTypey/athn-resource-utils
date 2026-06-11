@@ -20,9 +20,9 @@ export function createResourceController(userConfig = {}) {
 
     let updateTimer = null;
     let observer = null;
-
     let scrollSpyFrame = null;
     let latestCounts = {};
+    let isProgrammaticScroll = false;
 
     function log(...args) {
         if (!config.debug) return;
@@ -37,7 +37,10 @@ export function createResourceController(userConfig = {}) {
         updateCountLabels(root, config, counts);
         updateSections(root, config, counts);
         updateAnchorStates(root, config, counts);
-        updateActiveAnchorFromScroll(root, config, counts);
+
+        if (!isProgrammaticScroll) {
+            updateActiveAnchorFromScroll(root, config, counts);
+        }
 
         log('sync complete', { counts });
     }
@@ -45,6 +48,7 @@ export function createResourceController(userConfig = {}) {
 
     function scheduleScrollSpy() {
         if (!config.behavior.scrollSpy) return;
+        if (isProgrammaticScroll) return;
         if (scrollSpyFrame) return;
 
         scrollSpyFrame = window.requestAnimationFrame(() => {
@@ -70,6 +74,7 @@ export function createResourceController(userConfig = {}) {
         event.preventDefault();
 
         const isDisabled =
+            anchor.disabled === true ||
             anchor.classList.contains(config.classNames.disabled) ||
             anchor.getAttribute('aria-disabled') === 'true' ||
             anchor.getAttribute('data-athn-disabled') === 'true';
@@ -82,8 +87,18 @@ export function createResourceController(userConfig = {}) {
 
         const type = target.getAttribute('content-type');
 
+        isProgrammaticScroll = true;
+
+        // Set active immediately and prevent scrollspy from fighting it.
         setActiveAnchorByType(root, config, type, latestCounts);
-        scrollToAnchorTarget(target, config);
+
+        scrollToAnchorTarget(target, config, () => {
+            requestAnimationFrame(() => {
+                isProgrammaticScroll = false;
+                updateActiveAnchorFromScroll(root, config, latestCounts);
+            });
+        });
+
         updateUrlHash(anchor, config);
     }
 

@@ -101,7 +101,7 @@ export function getAnchorTarget(anchor, root) {
     return root.querySelector(`[content-type="${escapeCss(value)}"]`);
 }
 
-export function scrollToAnchorTarget(target, config) {
+export function scrollToAnchorTarget(target, config, onComplete) {
     if (!target) return;
 
     const offset = Number(config.behavior.scrollOffset) || 0;
@@ -112,8 +112,15 @@ export function scrollToAnchorTarget(target, config) {
     const endY = Math.max(targetTop - offset, 0);
     const distance = endY - startY;
 
+    function finish() {
+        if (typeof onComplete === 'function') {
+            onComplete();
+        }
+    }
+
     if (!config.behavior.smoothScroll || duration <= 0) {
         window.scrollTo(0, endY);
+        finish();
         return;
     }
 
@@ -134,7 +141,10 @@ export function scrollToAnchorTarget(target, config) {
 
         if (progress < 1) {
             requestAnimationFrame(animate);
+            return;
         }
+
+        finish();
     }
 
     requestAnimationFrame(animate);
