@@ -13,10 +13,7 @@ export const DEFAULT_CONFIG = {
 
     classNames: {
         disabled: 'is-disabled',
-
-        // Add whatever active class your anchors use here.
-        // w--current is useful if Webflow is adding current state.
-        active: ['is-active', 'w--current']
+        active: 'is-active'
     },
 
     behavior: {
@@ -26,8 +23,9 @@ export const DEFAULT_CONFIG = {
 
         scrollOffset: 100,
         smoothScroll: true,
-        scrollDuration: 700,
-        updateHash: false
-    }
+        scrollDuration: 900,
+        updateHash: false,
 
+        scrollSpy: true
+    }
 };

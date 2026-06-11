@@ -65,6 +65,117 @@ export function scrollToAnchorTarget(target, config) {
     requestAnimationFrame(animate);
 }
 
+import { getAttr, qsAll, isSelfHidden } from '../utils/dom.js';
+
+function getActiveClassNames(config) {
+    return Array.isArray(config.classNames.active)
+        ? config.classNames.active
+        : [config.classNames.active].filter(Boolean);
+}
+
+function getAnchorParent(anchor) {
+    return anchor?.parentElement || null;
+}
+
+export function clearActiveAnchorParents(root, config) {
+    const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
+    const activeClassNames = getActiveClassNames(config);
+
+    qsAll(selector, root).forEach((anchor) => {
+        const parent = getAnchorParent(anchor);
+
+        if (parent) {
+            activeClassNames.forEach((className) => {
+                parent.classList.remove(className);
+            });
+        }
+
+        anchor.removeAttribute('aria-current');
+    });
+}
+
+export function setActiveAnchorByType(root, config, type, counts = {}) {
+    if (!type) return;
+
+    const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
+    const activeClassNames = getActiveClassNames(config);
+
+    clearActiveAnchorParents(root, config);
+
+    qsAll(selector, root).forEach((anchor) => {
+        const value = getAnchorValue(anchor);
+
+        if (value !== type) return;
+
+        const count = counts[value] || 0;
+        const isDisabled =
+            count === 0 ||
+            anchor.classList.contains(config.classNames.disabled) ||
+            anchor.getAttribute('aria-disabled') === 'true' ||
+            anchor.getAttribute('data-athn-disabled') === 'true';
+
+        if (isDisabled) return;
+
+        const parent = getAnchorParent(anchor);
+
+        if (!parent) return;
+
+        activeClassNames.forEach((className) => {
+            parent.classList.add(className);
+        });
+
+        anchor.setAttribute('aria-current', 'true');
+    });
+}
+
+export function updateActiveAnchorFromScroll(root, config, counts = {}) {
+    if (!config.behavior.scrollSpy) return;
+
+    const sections = qsAll(config.selectors.section, root);
+
+    let bestSection = null;
+    let bestOverlap = 0;
+
+    const offset = Number(config.behavior.scrollOffset) || 0;
+    const viewportTop = window.scrollY + offset;
+    const viewportBottom = window.scrollY + window.innerHeight;
+
+    sections.forEach((section) => {
+        if (isSelfHidden(section)) return;
+
+        const type = getAttr(section, 'content-type');
+
+        if (!type) return;
+
+        const count = counts[type] || 0;
+
+        if (count === 0) return;
+
+        const rect = section.getBoundingClientRect();
+        const sectionTop = rect.top + window.scrollY;
+        const sectionBottom = sectionTop + rect.height;
+
+        const overlap = Math.max(
+            0,
+            Math.min(sectionBottom, viewportBottom) - Math.max(sectionTop, viewportTop)
+        );
+
+        if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestSection = section;
+        }
+    });
+
+    if (!bestSection) {
+        clearActiveAnchorParents(root, config);
+        return;
+    }
+
+    const activeType = getAttr(bestSection, 'content-type');
+
+    setActiveAnchorByType(root, config, activeType, counts);
+}
+
 export function updateUrlHash(anchor, config) {
     if (!config.behavior.updateHash) return;
 

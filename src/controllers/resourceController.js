@@ -9,7 +9,9 @@ import {
     getAnchorTarget,
     scrollToAnchorTarget,
     updateUrlHash,
-    updateAnchorStates
+    updateAnchorStates,
+    updateActiveAnchorFromScroll,
+    setActiveAnchorByType
 } from '../services/anchorScroll.js';
 
 export function createResourceController(userConfig = {}) {
@@ -19,6 +21,9 @@ export function createResourceController(userConfig = {}) {
     let updateTimer = null;
     let observer = null;
 
+    let scrollSpyFrame = null;
+    let latestCounts = {};
+
     function log(...args) {
         if (!config.debug) return;
         console.log('[athn-resource-utils]', ...args);
@@ -27,11 +32,24 @@ export function createResourceController(userConfig = {}) {
     function sync() {
         const counts = getResourceCounts(root, config);
 
+        latestCounts = counts;
+
         updateCountLabels(root, config, counts);
         updateSections(root, config, counts);
         updateAnchorStates(root, config, counts);
+        updateActiveAnchorFromScroll(root, config, counts);
 
         log('sync complete', { counts });
+    }
+
+    function scheduleScrollSpy() {
+        if (!config.behavior.scrollSpy) return;
+        if (scrollSpyFrame) return;
+
+        scrollSpyFrame = window.requestAnimationFrame(() => {
+            scrollSpyFrame = null;
+            updateActiveAnchorFromScroll(root, config, latestCounts);
+        });
     }
 
     function scheduleSync() {
@@ -48,8 +66,6 @@ export function createResourceController(userConfig = {}) {
 
         if (!anchor) return;
 
-        // Important:
-        // Always prevent the browser's native anchor jump.
         event.preventDefault();
 
         const isDisabled =
@@ -63,6 +79,9 @@ export function createResourceController(userConfig = {}) {
 
         if (!target) return;
 
+        const type = target.getAttribute('content-type');
+
+        setActiveAnchorByType(root, config, type, latestCounts);
         scrollToAnchorTarget(target, config);
         updateUrlHash(anchor, config);
     }
@@ -72,6 +91,9 @@ export function createResourceController(userConfig = {}) {
 
         root.addEventListener('change', scheduleSync, true);
         root.addEventListener('input', scheduleSync, true);
+
+        window.addEventListener('scroll', scheduleScrollSpy, { passive: true });
+        window.addEventListener('resize', scheduleScrollSpy);
     }
 
     function attachObserver() {
@@ -105,6 +127,14 @@ export function createResourceController(userConfig = {}) {
 
     function destroy() {
         clearTimeout(updateTimer);
+
+        if (scrollSpyFrame) {
+            window.cancelAnimationFrame(scrollSpyFrame);
+            scrollSpyFrame = null;
+        }
+
+        window.removeEventListener('scroll', scheduleScrollSpy);
+        window.removeEventListener('resize', scheduleScrollSpy);
 
         if (observer) {
             observer.disconnect();
