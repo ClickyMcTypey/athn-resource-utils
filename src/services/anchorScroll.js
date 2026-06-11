@@ -21,16 +21,25 @@ function getAnchorParent(anchor) {
     return anchor?.parentElement || null;
 }
 
-function getAnchorStateTargets(anchor) {
+function getAnchorLabelTargets(anchor) {
     const targets = new Set();
 
-    targets.add(anchor);
+    // New button setup:
+    // <button athn_anchor="guide">
+    //   <span class="w-form-label">Guides</span>
+    // </button>
+    anchor.querySelectorAll('.w-form-label').forEach((label) => {
+        targets.add(label);
+    });
 
+    // Old setup:
+    // <label>
+    //   <input athn_anchor="guide">
+    //   <span class="w-form-label">Guides</span>
+    // </label>
     const parent = anchor.parentElement;
 
     if (parent) {
-        targets.add(parent);
-
         Array.from(parent.children).forEach((sibling) => {
             if (sibling === anchor) return;
 
@@ -40,7 +49,35 @@ function getAnchorStateTargets(anchor) {
         });
     }
 
+    // Fallback:
+    // If the anchor itself is the label.
+    if (anchor.matches('.w-form-label')) {
+        targets.add(anchor);
+    }
+
     return Array.from(targets);
+}
+
+function getAnchorStateTargets(anchor) {
+    const targets = new Set();
+
+    targets.add(anchor);
+
+    const parent = anchor.parentElement;
+
+    if (parent) {
+        targets.add(parent);
+    }
+
+    getAnchorLabelTargets(anchor).forEach((label) => {
+        targets.add(label);
+    });
+
+    return Array.from(targets);
+}
+
+function getAnchorActiveTargets(anchor) {
+    return getAnchorLabelTargets(anchor);
 }
 
 export function getAnchorValue(anchor) {
@@ -125,6 +162,7 @@ export function updateAnchorStates(root, config, counts = {}) {
         const count = counts[value] || 0;
         const isDisabled = count === 0;
         const stateTargets = getAnchorStateTargets(anchor);
+        const isButton = anchor.tagName === 'BUTTON';
 
         stateTargets.forEach((target) => {
             target.classList.toggle(config.classNames.disabled, isDisabled);
@@ -139,16 +177,25 @@ export function updateAnchorStates(root, config, counts = {}) {
 
         anchor.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
 
+        if (isButton) {
+            anchor.disabled = isDisabled;
+        }
+
         if (isDisabled) {
             anchor.removeAttribute('aria-current');
-            anchor.setAttribute('tabindex', '-1');
+
+            if (!isButton) {
+                anchor.setAttribute('tabindex', '-1');
+            }
         } else {
-            anchor.removeAttribute('tabindex');
+            if (!isButton) {
+                anchor.removeAttribute('tabindex');
+            }
         }
     });
 }
 
-export function clearActiveAnchorParents(root, config) {
+export function clearActiveAnchorLabels(root, config) {
     const selector = getAnchorSelector(config);
     const activeClassNames = getActiveClassNames(config);
 
@@ -171,7 +218,7 @@ export function setActiveAnchorByType(root, config, type, counts = {}) {
     const selector = getAnchorSelector(config);
     const activeClassNames = getActiveClassNames(config);
 
-    clearActiveAnchorParents(root, config);
+    clearActiveAnchorLabels(root, config);
 
     qsAll(selector, root).forEach((anchor) => {
         const value = getAnchorValue(anchor);
@@ -181,6 +228,7 @@ export function setActiveAnchorByType(root, config, type, counts = {}) {
         const count = counts[value] || 0;
         const isDisabled =
             count === 0 ||
+            anchor.disabled === true ||
             anchor.classList.contains(config.classNames.disabled) ||
             anchor.getAttribute('aria-disabled') === 'true' ||
             anchor.getAttribute('data-athn-disabled') === 'true';
@@ -196,16 +244,6 @@ export function setActiveAnchorByType(root, config, type, counts = {}) {
         });
 
         anchor.setAttribute('aria-current', 'true');
-    });
-}
-
-function getAnchorActiveTargets(anchor) {
-    const parent = anchor.parentElement;
-
-    if (!parent) return [];
-
-    return Array.from(parent.children).filter((sibling) => {
-        return sibling !== anchor && sibling.matches('.w-form-label');
     });
 }
 
@@ -248,7 +286,7 @@ export function updateActiveAnchorFromScroll(root, config, counts = {}) {
     });
 
     if (!bestSection) {
-        clearActiveAnchorParents(root, config);
+        clearActiveAnchorLabels(root, config);
         return;
     }
 
