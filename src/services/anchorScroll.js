@@ -64,19 +64,48 @@ export function updateAnchorStates(root, config, counts) {
         const count = counts[value] || 0;
         const isDisabled = count === 0;
 
-        anchor.classList.toggle(config.classNames.disabled, isDisabled);
+        const stateTargets = getAnchorStateTargets(anchor);
+
+        stateTargets.forEach((target) => {
+            target.classList.toggle(config.classNames.disabled, isDisabled);
+            target.setAttribute('data-athn-disabled', isDisabled ? 'true' : 'false');
+
+            if (isDisabled) {
+                activeClassNames.forEach((className) => {
+                    target.classList.remove(className);
+                });
+            }
+        });
+
         anchor.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
-        anchor.setAttribute('data-athn-disabled', isDisabled ? 'true' : 'false');
 
         if (isDisabled) {
-            activeClassNames.forEach((className) => {
-                anchor.classList.remove(className);
-            });
-
             anchor.removeAttribute('aria-current');
             anchor.setAttribute('tabindex', '-1');
         } else {
             anchor.removeAttribute('tabindex');
         }
     });
+}
+
+function getAnchorStateTargets(anchor) {
+    const targets = new Set();
+
+    targets.add(anchor);
+
+    const parent = anchor.parentElement;
+
+    if (parent) {
+        targets.add(parent);
+
+        Array.from(parent.children).forEach((sibling) => {
+            if (sibling === anchor) return;
+
+            if (sibling.matches('.w-form-label')) {
+                targets.add(sibling);
+            }
+        });
+    }
+
+    return Array.from(targets);
 }
