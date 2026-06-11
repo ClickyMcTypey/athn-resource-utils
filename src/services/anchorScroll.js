@@ -1,8 +1,46 @@
-import { getAttr, qsAll } from '../utils/dom.js';
+import { getAttr, qsAll, isSelfHidden } from '../utils/dom.js';
 
 function escapeCss(value) {
     if (window.CSS && CSS.escape) return CSS.escape(value);
     return value.replace(/["\\]/g, '\\$&');
+}
+
+function getAnchorSelector(config) {
+    return [config.selectors.anchor, config.selectors.legacyAnchor]
+        .filter(Boolean)
+        .join(', ');
+}
+
+function getActiveClassNames(config) {
+    return Array.isArray(config.classNames.active)
+        ? config.classNames.active
+        : [config.classNames.active].filter(Boolean);
+}
+
+function getAnchorParent(anchor) {
+    return anchor?.parentElement || null;
+}
+
+function getAnchorStateTargets(anchor) {
+    const targets = new Set();
+
+    targets.add(anchor);
+
+    const parent = anchor.parentElement;
+
+    if (parent) {
+        targets.add(parent);
+
+        Array.from(parent.children).forEach((sibling) => {
+            if (sibling === anchor) return;
+
+            if (sibling.matches('.w-form-label')) {
+                targets.add(sibling);
+            }
+        });
+    }
+
+    return Array.from(targets);
 }
 
 export function getAnchorValue(anchor) {
@@ -65,20 +103,53 @@ export function scrollToAnchorTarget(target, config) {
     requestAnimationFrame(animate);
 }
 
-import { getAttr, qsAll, isSelfHidden } from '../utils/dom.js';
+export function updateUrlHash(anchor, config) {
+    if (!config.behavior.updateHash) return;
 
-function getActiveClassNames(config) {
-    return Array.isArray(config.classNames.active)
-        ? config.classNames.active
-        : [config.classNames.active].filter(Boolean);
+    const value = getAnchorValue(anchor);
+
+    if (!value) return;
+
+    window.history.pushState(null, '', `#${value}`);
 }
 
-function getAnchorParent(anchor) {
-    return anchor?.parentElement || null;
+export function updateAnchorStates(root, config, counts = {}) {
+    const selector = getAnchorSelector(config);
+    const activeClassNames = getActiveClassNames(config);
+
+    qsAll(selector, root).forEach((anchor) => {
+        const value = getAnchorValue(anchor);
+
+        if (!value) return;
+
+        const count = counts[value] || 0;
+        const isDisabled = count === 0;
+        const stateTargets = getAnchorStateTargets(anchor);
+
+        stateTargets.forEach((target) => {
+            target.classList.toggle(config.classNames.disabled, isDisabled);
+            target.setAttribute('data-athn-disabled', isDisabled ? 'true' : 'false');
+
+            if (isDisabled) {
+                activeClassNames.forEach((className) => {
+                    target.classList.remove(className);
+                });
+            }
+        });
+
+        anchor.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+
+        if (isDisabled) {
+            anchor.removeAttribute('aria-current');
+            anchor.setAttribute('tabindex', '-1');
+        } else {
+            anchor.removeAttribute('tabindex');
+        }
+    });
 }
 
 export function clearActiveAnchorParents(root, config) {
-    const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
+    const selector = getAnchorSelector(config);
     const activeClassNames = getActiveClassNames(config);
 
     qsAll(selector, root).forEach((anchor) => {
@@ -97,7 +168,7 @@ export function clearActiveAnchorParents(root, config) {
 export function setActiveAnchorByType(root, config, type, counts = {}) {
     if (!type) return;
 
-    const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
+    const selector = getAnchorSelector(config);
     const activeClassNames = getActiveClassNames(config);
 
     clearActiveAnchorParents(root, config);
@@ -174,75 +245,4 @@ export function updateActiveAnchorFromScroll(root, config, counts = {}) {
     const activeType = getAttr(bestSection, 'content-type');
 
     setActiveAnchorByType(root, config, activeType, counts);
-}
-
-export function updateUrlHash(anchor, config) {
-    if (!config.behavior.updateHash) return;
-
-    const value = getAnchorValue(anchor);
-
-    if (!value) return;
-
-    window.history.pushState(null, '', `#${value}`);
-}
-
-export function updateAnchorStates(root, config, counts) {
-    const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
-
-    const activeClassNames = Array.isArray(config.classNames.active)
-        ? config.classNames.active
-        : [config.classNames.active].filter(Boolean);
-
-    qsAll(selector, root).forEach((anchor) => {
-        const value = getAnchorValue(anchor);
-
-        if (!value) return;
-
-        const count = counts[value] || 0;
-        const isDisabled = count === 0;
-
-        const stateTargets = getAnchorStateTargets(anchor);
-
-        stateTargets.forEach((target) => {
-            target.classList.toggle(config.classNames.disabled, isDisabled);
-            target.setAttribute('data-athn-disabled', isDisabled ? 'true' : 'false');
-
-            if (isDisabled) {
-                activeClassNames.forEach((className) => {
-                    target.classList.remove(className);
-                });
-            }
-        });
-
-        anchor.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
-
-        if (isDisabled) {
-            anchor.removeAttribute('aria-current');
-            anchor.setAttribute('tabindex', '-1');
-        } else {
-            anchor.removeAttribute('tabindex');
-        }
-    });
-}
-
-function getAnchorStateTargets(anchor) {
-    const targets = new Set();
-
-    targets.add(anchor);
-
-    const parent = anchor.parentElement;
-
-    if (parent) {
-        targets.add(parent);
-
-        Array.from(parent.children).forEach((sibling) => {
-            if (sibling === anchor) return;
-
-            if (sibling.matches('.w-form-label')) {
-                targets.add(sibling);
-            }
-        });
-    }
-
-    return Array.from(targets);
 }
