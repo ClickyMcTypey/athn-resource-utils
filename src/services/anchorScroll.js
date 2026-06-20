@@ -1,5 +1,55 @@
 import { getAttr, qsAll, isSelfHidden } from '../utils/dom.js';
 
+function getMaxScrollY() {
+    return Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        0
+    );
+}
+
+function clampScrollY(value) {
+    return Math.min(Math.max(value, 0), getMaxScrollY());
+}
+
+function getUsableViewportHeight(config) {
+    const offset = Number(config.behavior.scrollOffset) || 0;
+    return Math.max(window.innerHeight - offset, 0);
+}
+
+function getAnchorScrollY(target, config) {
+    const offset = Number(config.behavior.scrollOffset) || 0;
+    const align = config.behavior.scrollAlign || 'start';
+
+    const rect = target.getBoundingClientRect();
+    const targetTop = rect.top + window.scrollY;
+
+    if (align === 'center') {
+        const usableHeight = getUsableViewportHeight(config);
+
+        // Places the target's top/anchor point at the center
+        // of the usable viewport below the navbar.
+        return clampScrollY(targetTop - offset - usableHeight / 2);
+    }
+
+    return clampScrollY(targetTop - offset);
+}
+
+function getScrollSpyLineY(config) {
+    const offset = Number(config.behavior.scrollOffset) || 0;
+    const align = config.behavior.scrollAlign || 'start';
+
+    if (align === 'center') {
+        const usableHeight = getUsableViewportHeight(config);
+
+        // Same visual line used by center scrolling.
+        return window.scrollY + offset + usableHeight / 2;
+    }
+
+    const spyBuffer = Number(config.behavior.scrollSpyBuffer) || 8;
+
+    return window.scrollY + offset + spyBuffer;
+}
+
 function escapeCss(value) {
     if (window.CSS && CSS.escape) return CSS.escape(value);
     return value.replace(/["\\]/g, '\\$&');
@@ -104,12 +154,10 @@ export function getAnchorTarget(anchor, root) {
 export function scrollToAnchorTarget(target, config, onComplete) {
     if (!target) return;
 
-    const offset = Number(config.behavior.scrollOffset) || 0;
     const duration = Number(config.behavior.scrollDuration) || 700;
 
     const startY = window.scrollY;
-    const targetTop = target.getBoundingClientRect().top + window.scrollY;
-    const endY = Math.max(targetTop - offset, 0);
+    const endY = getAnchorScrollY(target, config);
     const distance = endY - startY;
 
     function finish() {
@@ -262,12 +310,7 @@ export function updateActiveAnchorFromScroll(root, config, counts = {}) {
 
     const sections = qsAll(config.selectors.section, root);
 
-    const offset = Number(config.behavior.scrollOffset) || 0;
-    const spyBuffer = Number(config.behavior.scrollSpyBuffer) || 8;
-
-    // This is the detection line.
-    // If your navbar offset is 100px, we check slightly below that.
-    const scrollLine = window.scrollY + offset + spyBuffer;
+    const scrollLine = getScrollSpyLineY(config);
 
     let activeSection = null;
     let previousVisibleSection = null;

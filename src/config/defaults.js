@@ -22,6 +22,7 @@ export const DEFAULT_CONFIG = {
         observeDomChanges: true,
 
         scrollOffset: 100,
+        scrollAlign: 'center',
         smoothScroll: true,
         scrollDuration: 800,
         updateHash: false,
