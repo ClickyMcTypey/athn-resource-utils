@@ -8,7 +8,8 @@ export const DEFAULT_CONFIG = {
         section: '[athn-resource-section][content-type], [content-type]',
         empty: '.resource-empty',
         anchor: '[athn_anchor]',
-        legacyAnchor: '[athn_filter]'
+        legacyAnchor: '[athn_filter]',
+        offsetScroll: '[athn_scrollto]',
     },
 
     classNames: {

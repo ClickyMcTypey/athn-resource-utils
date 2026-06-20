@@ -11,7 +11,8 @@ import {
     updateUrlHash,
     updateAnchorStates,
     updateActiveAnchorFromScroll,
-    setActiveAnchorByType
+    setActiveAnchorByType,
+    getOffsetScrollTarget
 } from '../services/anchorScroll.js';
 
 export function createResourceController(userConfig = {}) {
@@ -65,6 +66,27 @@ export function createResourceController(userConfig = {}) {
         }, config.updateDelay);
     }
 
+    function handleOffsetScrollClick(event) {
+        const trigger = event.target.closest(config.selectors.offsetScroll);
+
+        if (!trigger) return;
+
+        const target = getOffsetScrollTarget(trigger, root);
+
+        if (!target) return;
+
+        event.preventDefault();
+
+        isProgrammaticScroll = true;
+
+        scrollToAnchorTarget(target, config, () => {
+            requestAnimationFrame(() => {
+                isProgrammaticScroll = false;
+                updateActiveAnchorFromScroll(root, config, latestCounts);
+            });
+        });
+    }
+
     function handleAnchorClick(event) {
         const selector = `${config.selectors.anchor}, ${config.selectors.legacyAnchor}`;
         const anchor = event.target.closest(selector);
@@ -103,6 +125,7 @@ export function createResourceController(userConfig = {}) {
     }
 
     function attachListeners() {
+        root.addEventListener('click', handleOffsetScrollClick, true);
         root.addEventListener('click', handleAnchorClick, true);
 
         root.addEventListener('change', scheduleSync, true);

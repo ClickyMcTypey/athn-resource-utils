@@ -7,6 +7,29 @@ function getMaxScrollY() {
     );
 }
 
+export function getOffsetScrollTarget(trigger, root) {
+    const targetValue = getAttr(trigger, 'athn_scrollto');
+
+    if (!targetValue) return null;
+
+    // Example: athn_scrollto="#formcontainer"
+    if (targetValue.startsWith('#')) {
+        return root.querySelector(targetValue);
+    }
+
+    // Example: athn_scrollto="[guide-form]"
+    if (
+        targetValue.startsWith('.') ||
+        targetValue.startsWith('[') ||
+        targetValue.startsWith('#')
+    ) {
+        return root.querySelector(targetValue);
+    }
+
+    // Example: athn_scrollto="formcontainer"
+    return root.querySelector(`#${escapeCss(targetValue)}`);
+}
+
 function getScrollNudge(config) {
     return Number(config.behavior.scrollNudge) || 0;
 }
