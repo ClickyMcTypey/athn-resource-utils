@@ -7,6 +7,10 @@ function getMaxScrollY() {
     );
 }
 
+function getScrollNudge(config) {
+    return Number(config.behavior.scrollNudge) || 0;
+}
+
 function clampScrollY(value) {
     return Math.min(Math.max(value, 0), getMaxScrollY());
 }
@@ -18,6 +22,7 @@ function getUsableViewportHeight(config) {
 
 function getAnchorScrollY(target, config) {
     const offset = Number(config.behavior.scrollOffset) || 0;
+    const nudge = getScrollNudge(config);
     const align = config.behavior.scrollAlign || 'start';
 
     const rect = target.getBoundingClientRect();
@@ -26,28 +31,26 @@ function getAnchorScrollY(target, config) {
     if (align === 'center') {
         const usableHeight = getUsableViewportHeight(config);
 
-        // Places the target's top/anchor point at the center
-        // of the usable viewport below the navbar.
-        return clampScrollY(targetTop - offset - usableHeight / 2);
+        return clampScrollY(targetTop - offset - usableHeight / 2 - nudge);
     }
 
-    return clampScrollY(targetTop - offset);
+    return clampScrollY(targetTop - offset - nudge);
 }
 
 function getScrollSpyLineY(config) {
     const offset = Number(config.behavior.scrollOffset) || 0;
+    const nudge = getScrollNudge(config);
     const align = config.behavior.scrollAlign || 'start';
 
     if (align === 'center') {
         const usableHeight = getUsableViewportHeight(config);
 
-        // Same visual line used by center scrolling.
-        return window.scrollY + offset + usableHeight / 2;
+        return window.scrollY + offset + usableHeight / 2 + nudge;
     }
 
     const spyBuffer = Number(config.behavior.scrollSpyBuffer) || 8;
 
-    return window.scrollY + offset + spyBuffer;
+    return window.scrollY + offset + spyBuffer + nudge;
 }
 
 function escapeCss(value) {

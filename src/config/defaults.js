@@ -21,11 +21,12 @@ export const DEFAULT_CONFIG = {
         hideSectionWhenEmpty: true,
         observeDomChanges: true,
 
-        scrollOffset: 200,
+        scrollOffset: 100,
         scrollAlign: 'center',
         smoothScroll: true,
         scrollDuration: 800,
         updateHash: false,
+        scrollNudge: -200,
 
         scrollSpy: true,
         scrollSpyBuffer: 8
